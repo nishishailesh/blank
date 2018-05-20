@@ -1,0 +1,30 @@
+<?php
+
+/* 
+ * Copy this file as staff.conf in some folder outside webroot 
+ * This file store some variables and password for genral access to database
+ *  keep this file outside webroot
+ *  suppose this file is /var/gmcs_config/staff.conf
+ *  Then permission is as follows
+ *  d--x------  2 www-data www-data  4096 Nov 13 16:59 gmcs_config
+ *  -r--------  1 www-data www-data 188 Nov 13 16:59 staff.conf
+ *  the chown, chgrp, chmod commands will be required
+ *  This will make the password secure
+ *  Keep password/username less file in document tree for project management
+ *  create a non-root user in mysql for staff database only. Give this user all four rights
+ *
+ * the stat command will show octat permission
+ * This number can also be used for chmod command 
+ * root@debian:/var# stat  -c "%a %n" gmcs_config/
+ * 100 gmcs_config/
+ * root@debian:/var# stat  -c "%a %n" gmcs_config/*
+ * 400 gmcs_config/staff.conf
+ * Alter "require_once" line in common/common.php to reflect folder where this file is stored outside webroot 
+ * */
+ 
+ 
+$GLOBALS['rootpath']='/staff'; // slash in begining is required, otherwise path relative to this file will be used
+$GLOBALS['main_user']='staffroot';
+$GLOBALS['main_pass']='something';
+$GLOBALS['homepage']='gmcsurat.edu.in';
+?>
