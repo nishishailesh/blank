@@ -3,7 +3,6 @@ session_start();
 require_once 'common_table_function.php';
 require_once 'config.php';
 require_once '/var/gmcs_config/staff.conf';
-require_once 'menu.php';
 if(isset($_POST['action']))		//always after config.php
 {
 	$GLOBALS['nojunk']=TRUE;
