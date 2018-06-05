@@ -132,6 +132,7 @@ elseif($action=='delete')									////
 }															////
 ////////End/////////////////////////////////////////////////////
 
+print_horizontal_all($link,$d,$t,'select * from `'.$t.'`');
 tail();
 ?>
 

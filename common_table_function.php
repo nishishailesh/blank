@@ -1070,16 +1070,24 @@ function show($link,$d,$t,$data)
 	echo '</div>';	
 }
 
-
-function printt($link,$d,$t,$data)
+function print_horizontal_header($link,$d,$t)
 {
 	$fld=get_key($link,$d,$t);
-	echo '<table border=1>';
+	echo '<tr>';
 	foreach($fld as $k=>$v)
 	{
-		echo '<span style="border></span>';
+		echo '<td>';
 		echo $v['Field'];
-		echo '</td><td>';
+		echo '</td>';
+	}
+	echo '</tr>';
+}
+
+function print_horizontal_single_row($data)
+{
+	echo '<tr>';
+	foreach($data as $k=>$v)
+	{
 		if($v['Type']=='blob' || $v['Type']=='mediumblob' || $v['Type']=='largeblob')
 		{
 		}
@@ -1087,9 +1095,20 @@ function printt($link,$d,$t,$data)
 		{
 			echo $data[$v['Field']];			
 		}
-		echo '</td></tr>';
+		echo '</td>';
 	}
-	echo '</table>';
+	echo '</tr>';
+}
+
+
+function print_horizontal_all($link,$d,$t,$sql)
+{
+	$result=run_query($link,$d,$sql);
+	print_horizontal_header($link,$d,$t);
+	while($ar=get_single_row($result))
+	{
+		print_horizontal_single_row($ar);
+	}
 }
 
 function show_parent_button($link,$d,$t,$pka)
