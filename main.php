@@ -73,66 +73,37 @@ $pka_value=false;
 head();
 menu();
 
-if($action=='search')
-{
-	search($link,$d,$t,$GLOBALS['default']);	
-}
-elseif($action=='new')
-{
-	add($link,$d,$t,$GLOBALS['default']);		
-}
 
-elseif($action=='show_search_rows')
-{
-	show_search_rows($link,$d,$t,$_POST);
-}
+	
 
-elseif($action=='show_all_rows')
-{
-	show_all_rows($link,$d,$t,$offset,$GLOBALS['limit'],$GLOBALS['default']);
-}
-
-elseif($action=='show_search_details')
-{
-	show_search_rows_by_pka($link,$d,$t,$pka);
-	show_parent_rows($link,$d,$t,$pka);
-	show_dependent_rows($link,$d,$t,$pka);
-	add_dependent_rows($link,$d,$t,$pka);
-}
-
-elseif($action=='print')
-{
-	print_rows_by_pka($link,$d,$t,$pka);
-	print_parent_rows($link,$d,$t,$pka);
-	print_dependent_rows($link,$d,$t,$pka);
-}
-
-elseif($action=='save')
+if($action=='save')
 {
 	save($link,$d,$t,$_POST,$_FILES);
-	show_search_rows_by_pka($link,$d,$t,$pka);
+	//show_search_rows_by_pka($link,$d,$t,$pka);
 }
 elseif($action=='insert')
 {
 	insert($link,$d,$t,$_POST,$_FILES);
-	show_search_rows_by_pka($link,$d,$t,$pka);
+	//show_search_rows_by_pka($link,$d,$t,$pka);
 }
+elseif($action=='show_single_by_pk')
+{
+	show_search_rows_by_pka_full($link,$d,$t,$pka);
+}
+elseif($action=='edit')										
+{															
+		edit($link,$d,$t,$pka,$GLOBALS['default']);			
+		//edit($link,$d,$t,$pka,$default);					
+}															
+elseif($action=='delete')									
+{															
+	delete($link,$d,$t,$pka);							
+}															
 
-////////////////////////////////////////////////////////////////
-//table specific data///////////////////////////////////////////
-//if $pka and $default is defined do not need to change     ////
-elseif($action=='edit')										////
-{															////
-		edit($link,$d,$t,$pka,$GLOBALS['default']);			////
-		//edit($link,$d,$t,$pka,$default);					////
-}															////
-elseif($action=='delete')									////
-{															////
-		delete($link,$d,$t,$pka);							////
-}															////
-////////End/////////////////////////////////////////////////////
-
-print_horizontal_all($link,$d,$t,'select * from `'.$t.'`');
+	//show_all_rows($link,$d,$t,$offset,$GLOBALS['limit'],$GLOBALS['default']);
+	add($link,$d,$t,$GLOBALS['default']);		
+	print_horizontal_all($link,$d,$t,mk_select_sql_from_default($link,$d,$t,$default));
+	
 tail();
 ?>
 

@@ -238,7 +238,7 @@ function insert($link,$d,$t,$post,$files)
 			else
 			{
 				//echo '<h1>'.$v['Type'].'</h1>';
-				$dt=$post[$v['Field']];
+				$dt=my_safe_text($link,$post[$v['Field']]);
 				$sql_fld=$sql_fld.'`'.$v['Field'].'`, ';
 				$sql_val=$sql_val.'\''.$dt.'\', ';
 			}
@@ -278,7 +278,9 @@ function search($link,$d,$t,$default)
 					echo '<input type=hidden name=^table readonly size=\''.strlen($t).'\' value=\''.$t.'\'>';
 
 				echo '<div class="col-sm-12 text-center">';	
-					echo $d.'->'.$t.'<span class="badge badge-danger">Search</span> (only first '.$GLOBALS['search_limit'].' will be displayed)';
+					echo '<span class="badge badge-danger border border-dark">'.$d.'</span>';
+					echo '<span class="badge badge-danger border border-dark">'.$t.'</span>';				
+					echo '<span class="badge badge-danger border border-dark">Search</span> (only first '.$GLOBALS['search_limit'].' will be displayed)';
 				echo '</div>';
 
 			echo '</div>';
@@ -485,6 +487,54 @@ function show_all_rows($link,$d,$t,$offset,$limit,$default)
 	}
 }
 
+
+
+function only_show_all_rows($link,$d,$t,$offset,$limit,$default)
+{
+	$sql_where='';
+	foreach($default as $k=>$v)
+	{	
+		$sql_where=$sql_where.' `'.$k.'` = \''.$v.'\' and ';
+	}
+	$sql_where=substr($sql_where,0,-4);
+	
+	if(strlen($sql_where)<=0){$sql='select * from`'.$t.'` limit '.$offset.','.$limit;}
+	else{$sql='select * from`'.$t.'` where '.$sql_where.' limit '.$offset.','.$limit;}
+	//echo $sql;
+	$result=run_query($link,$d,$sql);
+	echo '<div class="row">';	
+		echo '<div class="col text-center">';	
+			echo '<button class="btn btn-warning" type=button onclick="showHideClass(\'hdn\')">Toggle show</button>';
+
+			if($offset>0)
+			{
+			echo '<form method=post  style="display:inline">';
+			echo '<button class="btn btn-warning" type=submit>Previous Page('.max(($offset-$GLOBALS['limit']),1).'-'.$offset.')</button>';
+			echo '<input type=hidden name=offset value=\''.max(($offset-$GLOBALS['limit']),0).'\'>';
+			echo '<input type=hidden name=action value=show_all_rows>';
+			echo '<input type=hidden name=^database readonly value=\''.$d.'\'>';
+			echo '<input type=hidden name=^table readonly value=\''.$t.'\'>';				
+			echo '</form>';
+			}
+						
+			echo '<form method=post style="display:inline">';
+			echo '<button class="btn btn-warning" type=submit>Next Page('.($offset+$GLOBALS['limit']+1).'-'.($offset+2*$GLOBALS['limit']).')</button>';
+			echo '<input type=hidden name=offset value=\''.($offset+$GLOBALS['limit']).'\'>';
+			echo '<input type=hidden name=action value=show_all_rows>';
+			echo '<input type=hidden name=^database readonly value=\''.$d.'\'>';
+			echo '<input type=hidden name=^table readonly value=\''.$t.'\'>';			
+			echo '</form>';
+			
+		echo '</div>';
+	echo '</div>';		
+	
+	while($data=get_single_row($result))
+	{	
+		only_show($link,$d,$t,$data);
+	}
+}
+
+
 function show_search_buttons($link,$d,$t,$post)
 {
 	$result=get_search_result($link,$d,$t,$post);
@@ -505,6 +555,16 @@ function show_search_rows_by_pka($link,$d,$t,$pka)
 	}
 }
 
+function show_search_rows_by_pka_full($link,$d,$t,$pka)
+{
+	$result=get_search_result_by_pka($link,$d,$t,$pka);
+	
+	while($data=get_single_row($result))
+	{
+		show_full($link,$d,$t,$data);
+	}
+}
+
 
 
 function print_rows_by_pka($link,$d,$t,$pka)
@@ -513,7 +573,8 @@ function print_rows_by_pka($link,$d,$t,$pka)
 	
 	while($data=get_single_row($result))
 	{
-		printt($link,$d,$t,$data);
+		//my_print_r($data);
+		only_show($link,$d,$t,$data);
 	}
 }
 
@@ -838,7 +899,7 @@ function save($link,$d,$t,$post,$files)
 		else
 		{
 			$dt=$post[$v['Field']];
-			$sql_set=$sql_set.'`'.$v['Field'].'`=\''.$dt.'\' , ';
+			$sql_set=$sql_set.'`'.$v['Field'].'`=\''.my_safe_text($link,$dt).'\' , ';
 		}
 		
 		//added to all ifelse
@@ -1038,7 +1099,7 @@ function show($link,$d,$t,$data)
 		}
 		else
 		{
-			echo $data[$v['Field']];			
+			echo htmlspecialchars($data[$v['Field']]);			
 		}
 			echo '</div>';
 			
@@ -1070,10 +1131,242 @@ function show($link,$d,$t,$data)
 	echo '</div>';	
 }
 
+function show_full($link,$d,$t,$data)
+{
+	$pk_array=get_primary_key($link,$d,$t);
+	//my_print_r($pk_array);
+	$pk_str_full=$d.'_'.$t.'_';
+	$pk_str='';
+	foreach ($pk_array as $pkk=>$pkv)
+	{
+		$pk_str=$pk_str.$data[$pkv['Field']].'_';
+		$pk_str_full=$pk_str_full.$data[$pkv['Field']].'_';
+	}
+	$fld=get_key($link,$d,$t);
+	$fk=get_foreign_key($link,$d,$t);
+		
+	//my_print_r($data);
+		echo '<button class="btn btn-info"type=button onclick="showHideClass(\''.$pk_str_full.'\')" >';
+				echo '<span class="badge badge-danger">'.$d.'</span>&nbsp;';	
+				echo '<span class="badge badge-danger">'.$t.'</span>&nbsp;';	
+				echo '<span class="badge badge-danger">'.$pk_str.'</span>';
+		echo '</button>';
+		echo '<form method=post>';
+		echo '<input type=hidden name=^database readonly size=\''.strlen($d).'\' value=\''.$d.'\'>';
+		echo '<input type=hidden name=^table readonly size=\''.strlen($t).'\' value=\''.$t.'\'>';
+	echo '<div class="container bg-warning border hdn '.$pk_str_full.'">';
+
+	$parent=array('database'=>$d);
+	$pk_filled=array();
+	foreach($fld as $k=>$v)
+	{
+		if(in_subarray($pk_array,'Field',$v['Field']))
+		{
+			echo '<input type=hidden name=\''.$v['Field'].'\' value=\''.$data[$v['Field']].'\'>';
+			$pk_filled[$v['Field']]=$data[$v['Field']];
+		}
+			
+		echo '<div class="row">';
+		//echo '<div class="row nnn">';
+			echo '<div class="col-sm-4 bg-secondary border border-dark rounded">';
+				echo $v['Field'];
+			echo '</div>';
+			echo '<div class="col-sm-8 border border-success rounded">';
+		if($found=in_subarray($fk,'COLUMN_NAME',$v['Field']))
+		{
+				$sql='select * from `'.$found['REFERENCED_TABLE_NAME'].'` where 
+							`'.$found['REFERENCED_COLUMN_NAME'].'`=\''.$data[$v['Field']].'\'';
+				//echo $sql;
+				$result_fk=run_query($link,$d,$sql);
+				$fk_data=get_single_row($result_fk);
+				//my_print_r($fk_data);
+				$dv='';
+				foreach($fk_data as $kk=>$vv)
+				{
+						if($kk=='password' ||$kk=='epassword')
+						{
+							$dv=$dv.'|XXX';
+						}
+						elseif(substr($kk,0,1)=='_'){}
+						else
+						{
+							$dv=$dv.'|'.$vv;
+						}
+				}
+				echo substr($dv,0,40);
+				$parent['table']=$found['REFERENCED_TABLE_NAME'];
+				$parent['pk'][$found['REFERENCED_COLUMN_NAME']]=$data[$v['Field']];
+		}
+		
+		elseif($v['Type']=='blob' || $v['Type']=='mediumblob' || $v['Type']=='largeblob')
+		{
+			echo '<input type=hidden value=\''.$v['Field'].'\' name=blob_field>
+						<button class="btn btn-primary"  
+						formtarget=_blank
+						type=submit
+						name=action
+						value=download>Download</button>';
+		}
+		else
+		{
+			echo htmlspecialchars($data[$v['Field']]);			
+		}
+			echo '</div>';
+			
+					
+		echo '</div>';
+	}
+	
+		echo '<div class="row">';		
+			echo '<div class="col text-center">';
+				echo '<input  class="btn btn-primary"  type=submit name=action value=edit>
+					<input class="btn btn-danger"  type=submit name=action value=delete>';
+	echo '</form>';
+
+		echo '<form method=post class="d-inline">';
+				echo '<input type=hidden name=^database readonly value=\''.$d.'\'>';
+				echo '<input type=hidden name=^table readonly  value=\''.$t.'\'>';
+				$detail_str='';
+				foreach($pk_filled as $ff_k => $ff_v)
+				{
+					echo '<input type=hidden name=\''.$ff_k.'\' readonly value=\''.$ff_v.'\'>';			
+					echo '<input type=hidden name=\'cb_'.$ff_k.'\' readonly >';	
+					$detail_str=$detail_str.$ff_v.'_';		
+				}
+				echo '<button type=submit class="btn btn-secondary" name=action value=show_search_details>Detail View</button>';
+				echo '<button type=submit class="btn btn-success" name=action value=print>Print</button>';				
+			echo '</div>';	
+		echo '</div>';
+		echo '</form>';
+	echo '</div>';	
+}
+
+function show_button($link,$d,$t,$data)
+{
+	$pk_array=get_primary_key($link,$d,$t);
+	//my_print_r($pk_array);
+	$pk_str_full=$d.'_'.$t.'_';
+	$pk_str='';
+	foreach ($pk_array as $pkk=>$pkv)
+	{
+		$pk_str=$pk_str.$data[$pkv['Field']].'_';
+		$pk_str_full=$pk_str_full.$data[$pkv['Field']].'_';
+	}
+	$fld=get_key($link,$d,$t);
+	$fk=get_foreign_key($link,$d,$t);
+		
+	//my_print_r($data);
+		echo '<form method=post>';
+		foreach($pk_array as $k=>$v)
+		{
+			echo '<input type=hidden name=\''.$v['Field'].'\' value=\''.$data[$v['Field']].'\'>';
+		}		
+		
+		echo '<button class="btn btn-info" type=submit name=action value=show_single_by_pk>';
+				//echo '<span class="badge badge-danger">'.$d.'</span>&nbsp;';	
+				//echo '<span class="badge badge-danger">'.$t.'</span>&nbsp;';	
+				//echo '<span class="badge badge-danger">'.$pk_str.'</span>';
+				echo '<span class="badge badge-danger">Edit</span>';
+		echo '</button>';
+		echo '<input type=hidden name=^database readonly  value=\''.$d.'\'>';
+		echo '<input type=hidden name=^table readonly  value=\''.$t.'\'>';
+		echo '</form>';
+}
+
+function only_show($link,$d,$t,$data)
+{
+	$pk_array=get_primary_key($link,$d,$t);
+	//my_print_r($pk_array);
+	$pk_str_full=$d.'_'.$t.'_';
+	$pk_str='';
+	foreach ($pk_array as $pkk=>$pkv)
+	{
+		$pk_str=$pk_str.$data[$pkv['Field']].'_';
+		$pk_str_full=$pk_str_full.$data[$pkv['Field']].'_';
+	}
+	$fld=get_key($link,$d,$t);
+	$fk=get_foreign_key($link,$d,$t);
+		
+	//my_print_r($data);
+		echo '<button class="btn btn-info"type=button onclick="showHideClass(\''.$pk_str_full.'\')" >';
+				echo '<span class="badge badge-danger">'.$d.'</span>&nbsp;';	
+				echo '<span class="badge badge-danger">'.$t.'</span>&nbsp;';	
+				echo '<span class="badge badge-danger">'.$pk_str.'</span>';
+		echo '</button>';
+		echo '<form method=post>';
+		echo '<input type=hidden name=^database readonly size=\''.strlen($d).'\' value=\''.$d.'\'>';
+		echo '<input type=hidden name=^table readonly size=\''.strlen($t).'\' value=\''.$t.'\'>';
+	echo '<div class="container bg-warning border hdn '.$pk_str_full.'" style="display:none">';
+
+	$parent=array('database'=>$d);
+	$pk_filled=array();
+	foreach($fld as $k=>$v)
+	{
+		if(in_subarray($pk_array,'Field',$v['Field']))
+		{
+			echo '<input type=hidden name=\''.$v['Field'].'\' value=\''.$data[$v['Field']].'\'>';
+			$pk_filled[$v['Field']]=$data[$v['Field']];
+		}
+			
+		echo '<div class="row">';
+		//echo '<div class="row nnn">';
+			echo '<div class="col-sm-4 bg-secondary border border-dark rounded">';
+				echo $v['Field'];
+			echo '</div>';
+			echo '<div class="col-sm-8 border border-success rounded">';
+		if($found=in_subarray($fk,'COLUMN_NAME',$v['Field']))
+		{
+				$sql='select * from `'.$found['REFERENCED_TABLE_NAME'].'` where 
+							`'.$found['REFERENCED_COLUMN_NAME'].'`=\''.$data[$v['Field']].'\'';
+				//echo $sql;
+				$result_fk=run_query($link,$d,$sql);
+				$fk_data=get_single_row($result_fk);
+				//my_print_r($fk_data);
+				$dv='';
+				foreach($fk_data as $kk=>$vv)
+				{
+						if($kk=='password' ||$kk=='epassword')
+						{
+							$dv=$dv.'|XXX';
+						}
+						elseif(substr($kk,0,1)=='_'){}
+						else
+						{
+							$dv=$dv.'|'.$vv;
+						}
+				}
+				echo substr($dv,0,40);
+				$parent['table']=$found['REFERENCED_TABLE_NAME'];
+				$parent['pk'][$found['REFERENCED_COLUMN_NAME']]=$data[$v['Field']];
+		}
+		
+		elseif($v['Type']=='blob' || $v['Type']=='mediumblob' || $v['Type']=='largeblob')
+		{
+			echo '<input type=hidden value=\''.$v['Field'].'\' name=blob_field>
+						<button class="btn btn-primary"  
+						formtarget=_blank
+						type=submit
+						name=action
+						value=download>Download</button>';
+		}
+		else
+		{
+			echo htmlspecialchars($data[$v['Field']]);			
+		}
+			echo '</div>';
+			
+					
+		echo '</div>';
+	}
+		echo '</form>';
+	echo '</div>';	
+}
+
+
 function print_horizontal_header($link,$d,$t)
 {
 	$fld=get_key($link,$d,$t);
-	echo '<tr>';
+	echo '<tr><td>Action</td>';
 	foreach($fld as $k=>$v)
 	{
 		echo '<td>';
@@ -1085,30 +1378,30 @@ function print_horizontal_header($link,$d,$t)
 
 function print_horizontal_single_row($data)
 {
-	echo '<tr>';
 	foreach($data as $k=>$v)
 	{
-		if($v['Type']=='blob' || $v['Type']=='mediumblob' || $v['Type']=='largeblob')
-		{
-		}
-		else
-		{
-			echo $data[$v['Field']];			
-		}
+		echo '<td>';
+			echo htmlspecialchars($v);			
 		echo '</td>';
 	}
-	echo '</tr>';
 }
 
 
 function print_horizontal_all($link,$d,$t,$sql)
 {
 	$result=run_query($link,$d,$sql);
+	echo '<table border=1>';
 	print_horizontal_header($link,$d,$t);
 	while($ar=get_single_row($result))
-	{
+	{	
+		echo '<tr>';
+		echo '<td>';
+		show_button($link,$d,$t,$ar);
+		echo '</td>';
 		print_horizontal_single_row($ar);
+		echo '</tr>';
 	}
+	echo '</table>';
 }
 
 function show_parent_button($link,$d,$t,$pka)
@@ -1278,6 +1571,23 @@ function mk_select_sql_from_pk($link,$d,$t,$pk_value_array)
 	
 	$psql='select * from `'.$t.'`'.$sql_pwhere;
 //echo $psql;
+	
+	return $psql;
+}
+
+
+function mk_select_sql_from_default($link,$d,$t,$default)
+{
+	$sql_pwhere=' where ';
+	
+	foreach($default as $k=>$v)
+	{
+		$sql_pwhere=$sql_pwhere.'`'.$k.'`='.'\''.$v.'\' and ';
+	}
+	$sql_pwhere=substr($sql_pwhere,0,-4);
+	
+	$psql='select * from `'.$t.'`'.$sql_pwhere;
+	//echo $psql;
 	
 	return $psql;
 }
@@ -2263,4 +2573,8 @@ function menu()
 
 }
 
+function my_safe_text($link,$str)
+{
+	return mysqli_real_escape_string($link,$str);
+}
 ?>
