@@ -1376,6 +1376,19 @@ function print_horizontal_header($link,$d,$t)
 	echo '</tr>';
 }
 
+function print_horizontal_header_pdf($link,$d,$t)
+{
+	$fld=get_key($link,$d,$t);
+	echo '<tr><td>Sr No</td>';
+	foreach($fld as $k=>$v)
+	{
+		echo '<td>';
+		echo $v['Field'];
+		echo '</td>';
+	}
+	echo '</tr>';
+}
+
 function print_horizontal_single_row($data)
 {
 	foreach($data as $k=>$v)
@@ -1895,6 +1908,10 @@ function get_single_row($result)
 		}
 }
 
+function my_safe_text($link,$str)
+{
+	return mysqli_real_escape_string($link,$str);
+}
 ///////////////////general functions///////////////////
 
 function read_number($name,$id,$from,$to,$default='',$readonly='')
@@ -2515,6 +2532,7 @@ function mk_menu()
 														formaction=\''.$action[1].'\' 
 														type=submit 
 														name=action 
+														'.$action[2].'
 														value=\''.$action[0].'\'  
 														onclick="hidemenu()" >'.$entry_name.'</button>
 											</form>
@@ -2573,8 +2591,48 @@ function menu()
 
 }
 
-function my_safe_text($link,$str)
+
+function print_pdf($link,$d,$t,$sql)
 {
-	return mysqli_real_escape_string($link,$str);
+	class ACCOUNT extends TCPDF 
+	{
+		public function Header() 
+		{
+		}
+		
+		public function Footer() 
+		{
+			$this->SetY(-10);
+			$this->Cell(0, 10, 'Page '.$this->getAliasNumPage().'/'.$this->getAliasNbPages(), 0, false, 'C', 0, '', 0, false, 'T', 'M');
+		}	
+	}
+
+	ob_start();
+	$result=run_query($link,$d,$sql);
+	echo '<h3>(database):'.$d.' (table):'.$t.'</h3>';
+	echo '<table border="0.3">';
+	print_horizontal_header_pdf($link,$d,$t);
+	$counter=1;
+	while($ar=get_single_row($result))
+	{	
+		echo '<tr>';
+		echo '<td>';
+		echo $counter++;
+		echo '</td>';
+		print_horizontal_single_row($ar);
+		echo '</tr>';
+	}
+	echo '</table>';
+	$myStr = ob_get_contents();
+	ob_end_clean();
+	
+	$pdf = new ACCOUNT('L', 'mm', 'A4', true, 'UTF-8', false);
+	$pdf->SetFont('dejavusans', '', 9);
+	$pdf->SetMargins(30, 20, 30);
+	$pdf->AddPage();
+	$pdf->writeHTML($myStr, true, false, true, false, '');
+	$pdf->Output('xxx.pdf', 'I');
 }
+
+
 ?>

@@ -15,7 +15,8 @@ $GLOBALS['search_limit']=50;	//for search
 $GLOBALS['menu']=array
 					(
 						'up to 2 lacs'=>array(
-											'Edit'=>array('new|hod|up_to_two_lakhs','main.php')
+											'Edit'=>array('new|hod|up_to_two_lakhs','main.php',''),
+											'Print'=>array('print_pdf|hod|up_to_two_lakhs','main.php','formtarget=_blank')
 											//,
 											//'Print'=>array('print_horizontal|hod|up_to_two_lakhs','main.php'),
 										)

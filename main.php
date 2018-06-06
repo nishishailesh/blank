@@ -3,6 +3,8 @@ session_start();
 require_once 'config.php';
 require_once '/var/gmcs_config/staff.conf';
 require_once 'common_table_function.php';
+require_once('tcpdf/tcpdf.php'); //if in /usr/share/php folder
+
 //my_print_r($_POST);
 //RVogdc4R!
 
@@ -23,7 +25,7 @@ else
 
 if(isset($action))
 {
-	if($_POST['action']=='download')
+	if($_POST['action']=='download' || $action=='print_pdf' )
 	{
 		$GLOBALS['nojunk']=TRUE;
 	}
@@ -73,9 +75,6 @@ $pka_value=false;
 head();
 menu();
 
-
-	
-
 if($action=='save')
 {
 	save($link,$d,$t,$_POST,$_FILES);
@@ -99,7 +98,11 @@ elseif($action=='delete')
 {															
 	delete($link,$d,$t,$pka);							
 }															
-
+elseif($action=='print_pdf')									
+{															
+	print_pdf($link,$d,$t,mk_select_sql_from_default($link,$d,$t,$default));
+	exit(0);							
+}
 	//show_all_rows($link,$d,$t,$offset,$GLOBALS['limit'],$GLOBALS['default']);
 	add($link,$d,$t,$GLOBALS['default']);		
 	print_horizontal_all($link,$d,$t,mk_select_sql_from_default($link,$d,$t,$default));
